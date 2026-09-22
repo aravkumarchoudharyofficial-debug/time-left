@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEMPORAL TELEMETRY // A.I.S.O.N. HUB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #030712;
+      --card-bg: rgba(11, 19, 43, 0.65);
+      --neon-cyan: #00f3ff;
+      --neon-blue: #0066ff;
+      --neon-magenta: #ff0055;
+      --neon-green: #00ffaa;
+      --text-main: #e0f2fe;
+      --text-muted: #475569;
+      --border-cyan: rgba(0, 243, 255, 0.25);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glow-cyan: 0 0 15px rgba(0, 243, 255, 0.4);
+      --font-cyber: 'Orbitron', sans-serif;
+      --font-tech: 'Rajdhani', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
+
+    /* Red Alert Theme Override */
+    body.alert-mode {
+      --neon-cyan: #ff0055;
+      --neon-blue: #ff3300;
+      --border-cyan: rgba(ff, 0, 85, 0.35);
+      --glow-cyan: 0 0 15px rgba(255, 0, 85, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-tech);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      perspective: 1000px;
+      padding: 20px;
+    }
+
+    /* Animated Grid Canvas Background */
+    #canvas-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* HUD Scanlines & CRT FX */
+    .scanlines {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0, 0, 0, 0.3) 50%,
+        rgba(0, 0, 0, 0.3)
+      );
+      background-size: 100% 4px;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .vignette {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: radial-gradient(circle, transparent 50%, rgba(3, 7, 18, 0.9) 100%);
+      z-index: 9;
+      pointer-events: none;
+    }
+
+    /* Main Futuristic Container */
+    .dashboard {
+      width: 100%;
+      max-width: 950px;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-cyan);
+      border-radius: 4px;
+      padding: 30px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 243, 255, 0.05);
+      position: relative;
+      clip-path: polygon(
+        0 20px, 20px 0, 
+        calc(100% - 20px) 0, 100% 20px, 
+        100% calc(100% - 20px), calc(100% - 20px) 100%, 
+        20px 100%, 0 calc(100% - 20px)
+      );
+      transform-style: preserve-3d;
+      transition: border-color 0.4s, box-shadow 0.4s;
+    }
+
+    /* Corner Sci-Fi Bracket Details */
+    .dashboard::before, .dashboard::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--neon-cyan);
+      pointer-events: none;
+    }
+    .dashboard::before { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+    .dashboard::after { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+    /* Top Status Bar */
+    .hud-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-cyan);
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--neon-cyan);
+      border-radius: 50%;
+      box-shadow: var(--glow-cyan);
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.3; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1.3); }
+    }
+
+    .controls-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .cyber-btn {
+      background: rgba(0, 243, 255, 0.05);
+      border: 1px solid var(--border-cyan);
+      color: var(--neon-cyan);
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    }
+
+    .cyber-btn:hover {
+      background: var(--neon-cyan);
+      color: var(--bg-dark);
+      box-shadow: var(--glow-cyan);
+    }
+
+    /* Main Current Time Hero Section */
+    .hero-time-panel {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--glass-border);
+      padding: 20px;
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-label {
+      font-family: var(--font-cyber);
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .hero-clock {
+      font-family: var(--font-cyber);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+      letter-spacing: 2px;
+    }
+
+    .hero-clock .ms {
+      font-size: 0.4em;
+      color: var(--neon-cyan);
+      width: 2ch;
+      display: inline-block;
+      text-align: left;
+    }
+
+    /* Vector Grid of Vector Target Cards */
+    .countdown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .telemetry-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--glass-border);
+      border-left: 3px solid var(--neon-cyan);
+      padding: 16px;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .telemetry-card:hover {
+      border-color: var(--neon-cyan);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), var(--glow-cyan);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+      padding-bottom: 6px;
+    }
+
+    .target-title {
+      font-family: var(--font-cyber);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .target-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--neon-cyan);
+      background: rgba(0, 243, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    .timer-digits {
+      font-family: var(--font-cyber);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    /* Radial/Progress Bar Visuals */
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-cyan));
+      box-shadow: var(--glow-cyan);
+      transition: width 0.1s linear;
+    }
+
+    /* Footer Meta */
+    .hud-footer {
+      margin-top: 25px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border-cyan);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Canvas Background -->
+  <canvas id="canvas-bg"></canvas>
+
+  <!-- Overlay Effects -->
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <!-- HUD Interface Container -->
+  <main class="dashboard" id="hud-dashboard">
+    
+    <!-- Top System Telemetry Bar -->
+    <header class="hud-topbar">
+      <div class="system-status">
+        <div class="pulse-dot"></div>
+        <span>SYS.TEMPORAL // v4.09.2</span>
+      </div>
+      <div class="controls-group">
+        <button class="cyber-btn" id="sound-btn" onclick="toggleAudio()">AUDIO: OFF</button>
+        <button class="cyber-btn" onclick="toggleAlertTheme()">DEFCON MODE</button>
+      </div>
+    </header>
+
+    <!-- Main Clock Panel -->
+    <section class="hero-time-panel">
+      <div class="hero-label">CURRENT CHRONO-METRIC TELEMETRY</div>
+      <div class="hero-clock" id="hero-clock">00:00:00.<span class="ms" id="hero-ms">00</span></div>
+    </section>
+
+    <!-- Vector Grid Target Timers -->
+    <section class="countdown-grid">
+
+      <!-- 3:00 AM Target -->
+      <article class="telemetry-card">
+        <div class="card-header">
+          <span class="target-title">03:00 AM</span>
+          <span class="target-tag" id="tag-3">T-3 SHIFT</span>
+        </div>
+        <div class="timer-digits" id="timer-3">00h 00m 00s 00ms</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="bar-3"></div>
+        </div>
+      </article>
+
+      <!-- 4:00 AM Target -->
+      <article class="telemetry-card">
+        <div class="card-header">
+          <span class="target-title">04:00 AM</span>
+          <span class="target-tag" id="tag-4">T-4 SHIFT</span>
+        </div>
+        <div class="timer-digits" id="timer-4">00h 00m 00s 00ms</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="bar-4"></div>
+        </div>
+      </article>
+
+      <!-- 5:00 AM Target -->
+      <article class="telemetry-card">
+        <div class="card-header">
+          <span class="target-title">05:00 AM</span>
+          <span class="target-tag" id="tag-5">T-5 SHIFT</span>
+        </div>
+        <div class="timer-digits" id="timer-5">00h 00m 00s 00ms</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="bar-5"></div>
+        </div>
+      </article>
+
+      <!-- 6:00 AM Target -->
+      <article class="telemetry-card">
+        <div class="card-header">
+          <span class="target-title">06:00 AM</span>
+          <span class="target-tag" id="tag-6">T-6 SHIFT</span>
+        </div>
+        <div class="timer-digits" id="timer-6">00h 00m 00s 00ms</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="bar-6"></div>
+        </div>
+      </article>
+
+      <!-- 7:00 AM Target -->
+      <article class="telemetry-card">
+        <div class="card-header">
+          <span class="target-title">07:00 AM</span>
+          <span class="target-tag" id="tag-7">T-7 SHIFT</span>
+        </div>
+        <div class="timer-digits" id="timer-7">00h 00m 00s 00ms</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="bar-7"></div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- Footer System Status -->
+    <footer class="hud-footer">
+      <div>LATENCY: <span style="color: var(--neon-green)">1.2ms</span> | SYNC: <span style="color: var(--neon-green)">QUANTUM ATOMIC</span></div>
+      <div class="glitch-text">A.I.S.O.N. CORE RUNNING</div>
+    </footer>
+
+  </main>
+
+  <script>
+    /* Global System Target Objects */
+    const targets = [
+      { id: '3', hour: 3 },
+      { id: '4', hour: 4 },
+      { id: '5', hour: 5 },
+      { id: '6', hour: 6 },
+      { id: '7', hour: 7 }
+    ];
+
+    /* Dynamic Particle Canvas Engine */
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 1.5 + 0.5;
+        this.speedY = -(Math.random() * 0.5 + 0.2);
+        this.opacity = Math.random() * 0.5 + 0.1;
+      }
+      update() {
+        this.y += this.speedY;
+        if (this.y < 0) this.reset();
+      }
+      draw() {
+        ctx.fillStyle = `rgba(0, 243, 255, ${this.opacity})`;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    for (let i = 0; i < 70; i++) {
+      particles.push(new Particle());
+    }
+
+    function animateBackground() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Cyber Perspective Grid Lines
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.03)';
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      requestAnimationFrame(animateBackground);
+    }
+    animateBackground();
+
+    /* Web Audio Synthesizer Engine */
+    let audioCtx = null;
+    let audioEnabled = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playBeep() {
+      if (!audioEnabled || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function toggleAudio() {
+      initAudio();
+      audioEnabled = !audioEnabled;
+      document.getElementById('sound-btn').textContent = `AUDIO: ${audioEnabled ? 'ON' : 'OFF'}`;
+    }
+
+    function toggleAlertTheme() {
+      document.body.classList.toggle('alert-mode');
+    }
+
+    /* Core Chrono Logic Loop */
+    const pad = (num, size = 2) => String(num).padStart(size, '0');
+
+    function updateTelemetry() {
+      const now = new Date();
+
+      // Main Hero Clock Rendering
+      const hours = pad(now.getHours());
+      const mins = pad(now.getMinutes());
+      const secs = pad(now.getSeconds());
+      const ms = pad(Math.floor(now.getMilliseconds() / 10));
+
+      document.getElementById('hero-clock').childNodes[0].nodeValue = `${hours}:${mins}:${secs}.`;
+      document.getElementById('hero-ms').textContent = ms;
+
+      if (now.getMilliseconds() < 30) playBeep();
+
+      // Countdown Processing for Target Morning Hours
+      targets.forEach(target => {
+        let targetDate = new Date();
+        targetDate.setHours(target.hour, 0, 0, 0);
+
+        let isNextDay = false;
+        if (now >= targetDate) {
+          targetDate.setDate(targetDate.getDate() + 1);
+          isNextDay = true;
+        }
+
+        const diff = targetDate - now;
+
+        const hRem = Math.floor(diff / (1000 * 60 * 60));
+        const mRem = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const sRem = Math.floor((diff % (1000 * 60)) / 1000);
+        const msRem = Math.floor((diff % 1000) / 10);
+
+        // Update Digits Display
+        document.getElementById(`timer-${target.id}`).textContent = 
+          `${pad(hRem)}h ${pad(mRem)}m ${pad(sRem)}s ${pad(msRem)}ms`;
+
+        // Update Tag Context
+        document.getElementById(`tag-${target.id}`).textContent = 
+          isNextDay ? 'TOMORROW' : 'TODAY';
+
+        // Calculate Remaining Ratio for Dynamic Bar
+        const totalDayMs = 24 * 60 * 60 * 1000;
+        const percentLeft = Math.min(100, Math.max(0, (1 - (diff / totalDayMs)) * 100));
+        document.getElementById(`bar-${target.id}`).style.width = `${percentLeft}%`;
+      });
+
+      requestAnimationFrame(updateTelemetry);
+    }
+
+    // Launch High-Frequency Telemetry Cycle
+    requestAnimationFrame(updateTelemetry);
+
+    /* Subtle 3D Card Parallax Effect */
+    const card = document.getElementById('hud-dashboard');
+    document.addEventListener('mousemove', (e) => {
+      const xAxis = (window.innerWidth / 2 - e.pageX) / 45;
+      const yAxis = (window.innerHeight / 2 - e.pageY) / 45;
+      card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+    });
+  </script>
+</body>
+</html>
