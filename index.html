@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHRONO-NEXUS // Quantum Temporal Telemetry</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            orbitron: ['Orbitron', 'sans-serif'],
+            rajdhani: ['Rajdhani', 'sans-serif'],
+            mono: ['Share Tech Mono', 'monospace'],
+          },
+          colors: {
+            cyber: {
+              cyan: '#00f3ff',
+              magenta: '#ff0055',
+              violet: '#8a2be2',
+              emerald: '#00ff66',
+              amber: '#ffaa00',
+              dark: '#030712',
+              card: 'rgba(15, 23, 42, 0.65)',
+            }
+          },
+          animation: {
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'scanline': 'scanline 8s linear infinite',
+            'glitch': 'glitch 1s infinite',
+            'spin-slow': 'spin 12s linear infinite',
+            'radar': 'radar 4s linear infinite',
+          },
+          keyframes: {
+            scanline: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(1000%)' },
+            },
+            radar: {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom HUD styling, Clip paths & Neon Effects */
+    body {
+      background-color: #02040a;
+      color: #00f3ff;
+      font-family: 'Rajdhani', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Cyber Scancine Overlay */
+    .scanline-overlay {
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0, 243, 255, 0.03) 50%,
+        rgba(0, 243, 255, 0.03)
+      );
+      background-size: 100% 4px;
+    }
+
+    /* Sci-Fi Corner Borders */
+    .hud-box {
+      position: relative;
+      background: rgba(8, 15, 30, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 243, 255, 0.2);
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.05), inset 0 0 15px rgba(0, 243, 255, 0.03);
+      transition: all 0.3s ease;
+    }
+
+    .hud-box::before, .hud-box::after {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-color: var(--theme-color, #00f3ff);
+      border-style: solid;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .hud-box::before {
+      top: -1px; left: -1px;
+      border-width: 2px 0 0 2px;
+    }
+
+    .hud-box::after {
+      bottom: -1px; right: -1px;
+      border-width: 0 2px 2px 0;
+    }
+
+    .hud-box-corners-alt::before {
+      top: -1px; right: -1px; left: auto;
+      border-width: 2px 2px 0 0;
+    }
+
+    .hud-box-corners-alt::after {
+      bottom: -1px; left: -1px; right: auto;
+      border-width: 0 0 2px 2px;
+    }
+
+    .hud-box:hover {
+      border-color: var(--theme-color, #00f3ff);
+      box-shadow: 0 0 25px rgba(0, 243, 255, 0.2), inset 0 0 20px rgba(0, 243, 255, 0.08);
+    }
+
+    /* Clip Path Tech Button */
+    .tech-btn {
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+      transition: all 0.2s ease;
+    }
+
+    .tech-btn:hover {
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+
+    /* Neon Text Glow */
+    .glow-text {
+      text-shadow: 0 0 8px currentColor;
+    }
+    
+    .glow-box {
+      box-shadow: 0 0 15px currentColor;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030712;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--theme-color, #00f3ff);
+      border-radius: 2px;
+    }
+
+    /* Theme color variables */
+    :root {
+      --theme-color: #00f3ff;
+      --theme-glow: rgba(0, 243, 255, 0.4);
+      --theme-bg-glow: rgba(0, 243, 255, 0.1);
+    }
+
+    .theme-neon {
+      --theme-color: #00f3ff;
+      --theme-glow: rgba(0, 243, 255, 0.4);
+      --theme-bg-glow: rgba(0, 243, 255, 0.1);
+    }
+
+    .theme-violet {
+      --theme-color: #b537f2;
+      --theme-glow: rgba(181, 55, 242, 0.4);
+      --theme-bg-glow: rgba(181, 55, 242, 0.1);
+    }
+
+    .theme-amber {
+      --theme-color: #ffaa00;
+      --theme-glow: rgba(255, 170, 0, 0.4);
+      --theme-bg-glow: rgba(255, 170, 0, 0.1);
+    }
+
+    .theme-emerald {
+      --theme-color: #00ff66;
+      --theme-glow: rgba(0, 255, 102, 0.4);
+      --theme-bg-glow: rgba(0, 255, 102, 0.1);
+    }
+
+    /* Dynamic SVG Progress Rings */
+    .progress-ring__circle {
+      transition: stroke-dashoffset 0.1s linear;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+  </style>
+</head>
+<body class="theme-neon min-h-screen text-slate-100 relative selection:bg-cyan-500 selection:text-black">
+
+  <!-- Quantum Particles Canvas -->
+  <canvas id="quantum-canvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+  
+  <!-- CRT Scanline Grid Overlay -->
+  <div class="fixed inset-0 scanline-overlay pointer-events-none z-10 opacity-60"></div>
+  
+  <!-- Animated Laser Line -->
+  <div class="fixed left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--theme-color)] to-transparent opacity-40 z-10 pointer-events-none animate-scanline"></div>
+
+  <!-- Audio SFX Visualizer & Main UI Content -->
+  <div class="relative z-20 min-h-screen flex flex-col justify-between p-3 sm:p-6 max-w-[1600px] mx-auto">
+
+    <!-- TOP NAVIGATION & TEMPORAL HUD HEADER -->
+    <header class="hud-box rounded-lg p-4 mb-6 flex flex-wrap justify-between items-center gap-4 border-b border-cyan-500/30">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center space-x-4">
+        <div class="relative flex items-center justify-center w-12 h-12 rounded-lg bg-black/60 border border-[var(--theme-color)] glow-box text-[var(--theme-color)]">
+          <i data-lucide="clock" class="w-7 h-7 animate-pulse"></i>
+          <div class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-ping"></div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-orbitron text-xl sm:text-2xl font-black tracking-wider text-white">
+              CHRONO<span class="text-[var(--theme-color)] glow-text">-NEXUS</span>
+            </h1>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--theme-bg-glow)] border border-[var(--theme-color)] text-[var(--theme-color)] tracking-widest">v4.0.9</span>
+          </div>
+          <p class="font-mono text-xs text-slate-400 flex items-center gap-2">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+            TEMPORAL QUANTUM MATRIX // SYNC ACTIVE
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Telemetry Counters -->
+      <div class="flex items-center gap-4 sm:gap-6 font-mono text-xs bg-black/40 px-4 py-2 rounded-md border border-slate-800">
+        <div class="text-center">
+          <div class="text-slate-400 text-[10px] uppercase tracking-wider">System FPS</div>
+          <div id="fps-counter" class="text-[var(--theme-color)] font-bold text-sm">60 FPS</div>
+        </div>
+        <div class="h-6 w-[1px] bg-slate-800"></div>
+        <div class="text-center">
+          <div class="text-slate-400 text-[10px] uppercase tracking-wider">Latency Ping</div>
+          <div id="ping-counter" class="text-emerald-400 font-bold text-sm">12 ms</div>
+        </div>
+        <div class="h-6 w-[1px] bg-slate-800"></div>
+        <div class="text-center hidden md:block">
+          <div class="text-slate-400 text-[10px] uppercase tracking-wider">Temporal Field</div>
+          <div class="text-cyan-400 font-bold text-sm">99.87% STABLE</div>
+        </div>
+      </div>
+
+      <!-- Controls & Theme Mode Selector -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Audio SFX Toggle -->
+        <button id="audio-toggle-btn" class="tech-btn px-3 py-2 bg-slate-900 border border-[var(--theme-color)] text-[var(--theme-color)] hover:bg-[var(--theme-color)] hover:text-black font-mono text-xs font-bold flex items-center gap-2">
+          <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4"></i>
+          <span id="audio-status-text" class="hidden sm:inline">AUDIO: ON</span>
+        </button>
+
+        <!-- Theme Preset Dropdown -->
+        <div class="relative">
+          <select id="theme-selector" class="tech-btn px-3 py-2 bg-black border border-slate-700 text-slate-200 font-mono text-xs cursor-pointer focus:outline-none focus:border-[var(--theme-color)]">
+            <option value="theme-neon">CYBER NEON</option>
+            <option value="theme-violet">QUANTUM VIOLET</option>
+            <option value="theme-amber">TACTICAL AMBER</option>
+            <option value="theme-emerald">MATRIX EMERALD</option>
+          </select>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- MAIN HERO CONTENT SECTION -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 flex-grow">
+
+      <!-- LEFT COLUMN: Realtime Master Temporal HUD & Visualizers (5 Cols) -->
+      <section class="lg:col-span-5 flex flex-col gap-6">
+
+        <!-- Master Clock Card -->
+        <div class="hud-box rounded-lg p-6 relative overflow-hidden">
+          <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+            <span class="font-orbitron text-xs text-[var(--theme-color)] tracking-widest uppercase flex items-center gap-2">
+              <i data-lucide="globe" class="w-4 h-4"></i> Local Temporal Vector
+            </span>
+            <span id="timezone-badge" class="font-mono text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+              UTC+00:00
+            </span>
+          </div>
+
+          <!-- Digital Master Time Display -->
+          <div class="text-center py-4">
+            <div id="master-clock" class="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-widest glow-text">
+              00:00:00
+            </div>
+            <div id="master-millis" class="font-mono text-xl sm:text-2xl text-[var(--theme-color)] font-bold mt-1">
+              .000 MS
+            </div>
+            <div id="master-date" class="font-rajdhani text-lg text-slate-300 font-semibold tracking-wide uppercase mt-2">
+              YEAR 2026 // MONTH -- // DAY --
+            </div>
+          </div>
+
+          <!-- Night / Day Orbital Cycle Progress Bar -->
+          <div class="mt-4 pt-4 border-t border-slate-800/80">
+            <div class="flex justify-between text-xs font-mono text-slate-400 mb-1">
+              <span>DUSK (18:00)</span>
+              <span id="diurnal-phase-name" class="text-[var(--theme-color)] font-bold">NIGHT PHASE</span>
+              <span>DAWN (06:00)</span>
+            </div>
+            <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800 relative">
+              <div id="diurnal-progress-bar" class="h-full bg-gradient-to-r from-indigo-600 via-[var(--theme-color)] to-emerald-400 rounded-full w-1/2 transition-all duration-300 shadow-[0_0_10px_var(--theme-color)]"></div>
+            </div>
+            <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
+              <span id="diurnal-percent">0% Completed</span>
+              <span id="time-to-dawn">--:--:-- until Dawn</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry Radar & Audio Synthesizer Waveform -->
+        <div class="hud-box rounded-lg p-5 flex-grow flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-3">
+            <span class="font-orbitron text-xs text-[var(--theme-color)] tracking-widest uppercase flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4"></i> Quantum Frequency Monitor
+            </span>
+            <span class="font-mono text-[10px] text-emerald-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> LIVE WAVEFORM
+            </span>
+          </div>
+
+          <!-- Audio / Waveform Visualizer Canvas -->
+          <div class="relative h-28 w-full bg-black/60 rounded border border-slate-800 overflow-hidden flex items-center justify-center">
+            <canvas id="waveform-canvas" class="w-full h-full"></canvas>
+            <div class="absolute inset-0 pointer-events-none border border-[var(--theme-glow)] opacity-20"></div>
+          </div>
+
+          <!-- Orbital Lunar & Solar Status telemetry -->
+          <div class="grid grid-cols-2 gap-3 mt-4 text-xs font-mono">
+            <div class="bg-black/40 p-2.5 rounded border border-slate-800/80 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-800 border border-cyan-500/40 flex items-center justify-center text-cyan-300">
+                <i data-lucide="moon" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="text-slate-500 text-[10px]">LUNAR PHASE</div>
+                <div id="lunar-phase-text" class="text-slate-200 font-semibold">Waning Crescent</div>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-2.5 rounded border border-slate-800/80 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-800 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <i data-lucide="compass" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="text-slate-500 text-[10px]">TIME VELOCITY</div>
+                <div class="text-slate-200 font-semibold">1.000s / sec</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: 5 Target Countdown Vectors (7 Cols) -->
+      <section class="lg:col-span-7 flex flex-col justify-between gap-4">
+        
+        <!-- Section Header -->
+        <div class="flex items-center justify-between bg-black/40 p-3 rounded border border-slate-800">
+          <div class="font-orbitron text-sm text-white font-bold tracking-wider flex items-center gap-2">
+            <i data-lucide="target" class="w-4 h-4 text-[var(--theme-color)]"></i>
+            MORNING TEMPORAL TARGET VECTORS
+          </div>
+          <div class="font-mono text-xs text-slate-400">
+            AUTO-ROLLOVER: <span class="text-emerald-400">ENABLED</span>
+          </div>
+        </div>
+
+        <!-- Target Cards Container (3 AM, 4 AM, 5 AM, 6 AM, 7 AM) -->
+        <div class="grid grid-cols-1 gap-3.5" id="targets-container">
+          <!-- Dynamically Injected Target Cards -->
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- FOOTER HUD BAR -->
+    <footer class="hud-box rounded-lg p-3 text-xs font-mono text-slate-400 flex flex-wrap justify-between items-center gap-4 border-t border-slate-800">
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-1.5 text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-[var(--theme-color)]"></span>
+          CHRONO ENGINE ONLINE
+        </span>
+        <span class="hidden sm:inline text-slate-600">|</span>
+        <span class="hidden sm:inline">PRECISION: <span class="text-slate-200">±0.001ms</span></span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="trigger-chime-btn" class="tech-btn px-3 py-1 bg-slate-900 border border-slate-700 hover:border-[var(--theme-color)] text-slate-300 hover:text-[var(--theme-color)] transition-colors">
+          <i data-lucide="zap" class="w-3.5 h-3.5 inline mr-1"></i> TEST SYNTH PULSE
+        </button>
+        <span class="text-slate-600">|</span>
+        <span class="text-[10px] text-slate-500">SYSTEM SECURE // QUANTUM LINK</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    /* ========================================================================
+       CHRONO-NEXUS ULTIMATE TEMPORAL ENGINE
+       ======================================================================== */
+
+    // TARGET HOURS CONFIGURATION
+    const TARGET_HOURS = [
+      { hour: 3, label: '3:00 AM', tag: 'ALPHA VORTEX', desc: 'Deep Night Quantum State' },
+      { hour: 4, label: '4:00 AM', tag: 'BETA SHIFT', desc: 'Pre-Dawn Cyber Grid Sync' },
+      { hour: 5, label: '5:00 AM', tag: 'GAMMA DAWN', desc: 'Twilight Threshold Activation' },
+      { hour: 6, label: '6:00 AM', tag: 'DELTA DAWN', desc: 'Solar Horizon Ingress' },
+      { hour: 7, label: '7:00 AM', tag: 'EPSILON PRIME', desc: 'Full Daylight Protocol Start' }
+    ];
+
+    // AUDIO SYNTHESIZER ENGINE (WEB AUDIO API)
+    class CyberAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playHoverSound() {
+        if (!this.enabled) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.04);
+          
+          gain.gain.setValueAtTime(0.015, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.04);
+        } catch(e) {}
+      }
+
+      playClickSound() {
+        if (!this.enabled) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.08);
+
+          gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.08);
+        } catch(e) {}
+      }
+
+      playChimeSound() {
+        if (!this.enabled) return;
+        this.init();
+        try {
+          const now = this.ctx.currentTime;
+          const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          
+          freqs.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+
+            gain.gain.setValueAtTime(0.05, now + idx * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.4);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now + idx * 0.06);
+            osc.stop(now + idx * 0.06 + 0.4);
+          });
+        } catch(e) {}
+      }
+    }
+
+    const audio = new CyberAudioEngine();
+
+    // QUANTUM PARTICLE BACKGROUND CANVAS ENGINE
+    const particleCanvas = document.getElementById('quantum-canvas');
+    const pCtx = particleCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      particleCanvas.width = window.innerWidth;
+      particleCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * particleCanvas.width;
+        this.y = Math.random() * particleCanvas.height;
+        this.size = Math.random() * 1.8 + 0.2;
+        this.speedX = (Math.random() - 0.5) * 0.5;
+        this.speedY = (Math.random() - 0.5) * 0.5;
+        this.alpha = Math.random() * 0.6 + 0.1;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x < 0 || this.x > particleCanvas.width || this.y < 0 || this.y > particleCanvas.height) {
+          this.reset();
+        }
+      }
+
+      draw() {
+        const themeColor = getComputedStyle(document.body).getPropertyValue('--theme-color').trim() || '#00f3ff';
+        pCtx.fillStyle = themeColor;
+        pCtx.globalAlpha = this.alpha;
+        pCtx.beginPath();
+        pCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        pCtx.fill();
+      }
+    }
+
+    for (let i = 0; i < 70; i++) {
+      particles.push(new Particle());
+    }
+
+    function animateParticles() {
+      pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // WAVEFORM CANVAS ANIMATION
+    const waveCanvas = document.getElementById('waveform-canvas');
+    const wCtx = waveCanvas.getContext('2d');
+
+    function drawWaveform() {
+      waveCanvas.width = waveCanvas.offsetWidth;
+      waveCanvas.height = waveCanvas.offsetHeight;
+
+      const time = Date.now() * 0.003;
+      const themeColor = getComputedStyle(document.body).getPropertyValue('--theme-color').trim() || '#00f3ff';
+
+      wCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+      wCtx.strokeStyle = themeColor;
+      wCtx.lineWidth = 1.5;
+      wCtx.beginPath();
+
+      const sliceWidth = waveCanvas.width / 50;
+      let x = 0;
+
+      for (let i = 0; i < 50; i++) {
+        const y = (Math.sin(i * 0.2 + time) * Math.cos(i * 0.1 + time * 1.5) * (waveCanvas.height / 3)) + (waveCanvas.height / 2);
+        if (i === 0) {
+          wCtx.moveTo(x, y);
+        } else {
+          wCtx.lineTo(x, y);
+        }
+        x += sliceWidth;
+      }
+
+      wCtx.stroke();
+      requestAnimationFrame(drawWaveform);
+    }
+    drawWaveform();
+
+    // RENDER TARGET CARDS HTML STRUCTURE
+    const targetsContainer = document.getElementById('targets-container');
+
+    function renderTargetCards() {
+      targetsContainer.innerHTML = TARGET_HOURS.map((target, idx) => `
+        <div class="hud-box rounded-lg p-4 transition-all duration-300 relative overflow-hidden group" id="card-${target.hour}">
+          <!-- Background Glow Effect -->
+          <div class="absolute -right-10 -bottom-10 w-32 h-32 rounded-full bg-[var(--theme-bg-glow)] blur-2xl group-hover:bg-[var(--theme-glow)] transition-all"></div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+            
+            <!-- Target Title & Info -->
+            <div class="flex items-center gap-4 w-full sm:w-auto">
+              <!-- SVG Circular Progress Ring -->
+              <div class="relative w-14 h-14 flex-shrink-0 flex items-center justify-center">
+                <svg class="w-full h-full" viewBox="0 0 36 36">
+                  <path
+                    class="text-slate-800"
+                    stroke-width="3"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    id="ring-${target.hour}"
+                    class="text-[var(--theme-color)] progress-ring__circle"
+                    stroke-width="3"
+                    stroke-dasharray="100, 100"
+                    stroke-dashoffset="100"
+                    stroke-linecap="round"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <span class="absolute font-mono text-[11px] font-bold text-white">${target.hour} AM</span>
+              </div>
+
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-orbitron font-bold text-lg text-white group-hover:text-[var(--theme-color)] transition-colors">
+                    ${target.label}
+                  </h3>
+                  <span id="badge-day-${target.hour}" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                    TODAY
+                  </span>
+                </div>
+                <div class="text-xs font-mono text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[var(--theme-color)] font-semibold">${target.tag}</span>
+                  <span>//</span>
+                  <span>${target.desc}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Countdown Output Display -->
+            <div class="flex items-center gap-2 text-right w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-slate-800/80 pt-2 sm:pt-0">
+              <div class="text-left sm:text-right">
+                <div id="timer-${target.hour}" class="font-orbitron font-extrabold text-xl sm:text-2xl text-white tracking-wider glow-text">
+                  00h 00m 00s
+                </div>
+                <div id="millis-${target.hour}" class="font-mono text-xs text-[var(--theme-color)] font-semibold">
+                  .000 MS REMAINING
+                </div>
+              </div>
+
+              <!-- Reticle Indicator -->
+              <div class="w-8 h-8 rounded border border-slate-800 flex items-center justify-center text-slate-600 group-hover:border-[var(--theme-color)] group-hover:text-[var(--theme-color)] transition-all">
+                <i data-lucide="crosshair" class="w-4 h-4"></i>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `).join('');
+
+      // Re-initialize Lucide Icons
+      lucide.createIcons();
+    }
+
+    renderTargetCards();
+
+    // MAIN TEMPORAL CALCULATIONS ENGINE
+    function updateTemporalCalculations() {
+      const now = new Date();
+      
+      // Update Master Clock Display
+      const hrs = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const secs = String(now.getSeconds()).padStart(2, '0');
+      const ms = String(now.getMilliseconds()).padStart(3, '0');
+
+      document.getElementById('master-clock').textContent = `${hrs}:${mins}:${secs}`;
+      document.getElementById('master-millis').textContent = `.${ms} MS`;
+
+      // Master Date Display
+      const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+      document.getElementById('master-date').textContent = now.toLocaleDateString('en-US', options).toUpperCase();
+
+      // Timezone Offset Calculation
+      const offsetMin = -now.getTimezoneOffset();
+      const offsetHrs = Math.floor(Math.abs(offsetMin) / 60);
+      const offsetMinsRemainder = Math.abs(offsetMin) % 60;
+      const sign = offsetMin >= 0 ? '+' : '-';
+      const formattedOffset = `UTC${sign}${String(offsetHrs).padStart(2, '0')}:${String(offsetMinsRemainder).padStart(2, '0')}`;
+      document.getElementById('timezone-badge').textContent = formattedOffset;
+
+      // Diurnal (Night/Day Phase) Calculation
+      // Night phase defined from 18:00 (6 PM) to 06:00 (6 AM)
+      let nightStart = new Date(now);
+      nightStart.setHours(18, 0, 0, 0);
+      if (now.getHours() < 6) {
+        nightStart.setDate(nightStart.getDate() - 1);
+      }
+      
+      let dawnTarget = new Date(nightStart);
+      dawnTarget.setDate(dawnTarget.getDate() + 1);
+      dawnTarget.setHours(6, 0, 0, 0);
+
+      const totalNightDuration = dawnTarget - nightStart;
+      const elapsedNight = now - nightStart;
+      let nightPercent = Math.min(100, Math.max(0, (elapsedNight / totalNightDuration) * 100));
+
+      const progressBar = document.getElementById('diurnal-progress-bar');
+      progressBar.style.width = `${nightPercent.toFixed(1)}%`;
+      document.getElementById('diurnal-percent').textContent = `${nightPercent.toFixed(1)}% Phase Completed`;
+
+      // Time to 6 AM Dawn calculation
+      const timeToDawnMs = Math.max(0, dawnTarget - now);
+      const dawnH = Math.floor(timeToDawnMs / 3600000);
+      const dawnM = Math.floor((timeToDawnMs % 3600000) / 60000);
+      const dawnS = Math.floor((timeToDawnMs % 60000) / 1000);
+      document.getElementById('time-to-dawn').textContent = `${String(dawnH).padStart(2,'0')}:${String(dawnM).padStart(2,'0')}:${String(dawnS).padStart(2,'0')} until Dawn`;
+
+      // CALCULATE EACH TARGET (3 AM, 4 AM, 5 AM, 6 AM, 7 AM)
+      TARGET_HOURS.forEach(target => {
+        let targetDate = new Date(now);
+        targetDate.setHours(target.hour, 0, 0, 0);
+
+        let isTomorrow = false;
+
+        // If target time has passed today, move target date to tomorrow
+        if (now >= targetDate) {
+          targetDate.setDate(targetDate.getDate() + 1);
+          isTomorrow = true;
+        }
+
+        // Calculate precise remaining milliseconds
+        const diffMs = targetDate - now;
+
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+        const millis = Math.floor(diffMs % 1000);
+
+        // Update Target Countdown Display
+        const pad = num => String(num).padStart(2, '0');
+        const padMs = num => String(num).padStart(3, '0');
+
+        const timerElem = document.getElementById(`timer-${target.hour}`);
+        const millisElem = document.getElementById(`millis-${target.hour}`);
+        const badgeElem = document.getElementById(`badge-day-${target.hour}`);
+        const ringElem = document.getElementById(`ring-${target.hour}`);
+
+        if (timerElem) {
+          timerElem.textContent = `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+        }
+        if (millisElem) {
+          millisElem.textContent = `.${padMs(millis)} MS REMAINING`;
+        }
+        if (badgeElem) {
+          badgeElem.textContent = isTomorrow ? 'TOMORROW' : 'TODAY';
+          badgeElem.className = isTomorrow 
+            ? 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/80'
+            : 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/80';
+        }
+
+        // Circular Progress Ring Offset (Percentage of 24h cycle remaining to target)
+        if (ringElem) {
+          const maxCycleMs = 24 * 60 * 60 * 1000;
+          const percentage = (diffMs / maxCycleMs) * 100;
+          const strokeOffset = 100 - percentage;
+          ringElem.style.strokeDashoffset = strokeOffset;
+        }
+      });
+    }
+
+    // FPS & LATENCY GAUGE SIMULATION
+    let lastFrameTime = performance.now();
+    let frameCount = 0;
+
+    function updateTelemetryGauges() {
+      const now = performance.now();
+      frameCount++;
+
+      if (now - lastFrameTime >= 1000) {
+        const fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+        document.getElementById('fps-counter').textContent = `${fps} FPS`;
+        
+        // Dynamic realistic ping fluctuation
+        const simulatedPing = Math.floor(10 + Math.random() * 6);
+        document.getElementById('ping-counter').textContent = `${simulatedPing} ms`;
+
+        frameCount = 0;
+        lastFrameTime = now;
+      }
+      requestAnimationFrame(updateTelemetryGauges);
+    }
+    requestAnimationFrame(updateTelemetryGauges);
+
+    // EVENT LISTENERS & AUDIO INTERACTIONS
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // Attach Hover & Click SFX to Interactive UI Buttons
+      document.querySelectorAll('button, select, .hud-box').forEach(el => {
+        el.addEventListener('mouseenter', () => audio.playHoverSound());
+        el.addEventListener('click', () => audio.playClickSound());
+      });
+
+      // Audio Toggle Button
+      const audioBtn = document.getElementById('audio-toggle-btn');
+      const audioStatusText = document.getElementById('audio-status-text');
+      const audioIcon = document.getElementById('audio-icon');
+
+      audioBtn.addEventListener('click', () => {
+        audio.enabled = !audio.enabled;
+        if (audio.enabled) {
+          audioStatusText.textContent = 'AUDIO: ON';
+          audioIcon.setAttribute('data-lucide', 'volume-2');
+          audio.playChimeSound();
+        } else {
+          audioStatusText.textContent = 'AUDIO: OFF';
+          audioIcon.setAttribute('data-lucide', 'volume-x');
+        }
+        lucide.createIcons();
+      });
+
+      // Theme Selector Dropdown
+      const themeSelector = document.getElementById('theme-selector');
+      themeSelector.addEventListener('change', (e) => {
+        document.body.className = `${e.target.value} min-h-screen text-slate-100 relative selection:bg-cyan-500 selection:text-black`;
+        audio.playChimeSound();
+      });
+
+      // Test Synth Chime Button
+      document.getElementById('trigger-chime-btn').addEventListener('click', () => {
+        audio.playChimeSound();
+      });
+
+      // Execute High-Precision Engine Loop (Runs ~60 FPS for Smooth Millisecond Render)
+      function engineLoop() {
+        updateTemporalCalculations();
+        requestAnimationFrame(engineLoop);
+      }
+      engineLoop();
+    });
+  </script>
+</body>
+</html>
